@@ -26,14 +26,16 @@ void main() async {
   // Get item by index
   Item? item = (await repository.getAll()).elementAt(0);
   print('\nItem at index 0: ${item?.description}');
-/*
+
+  Item? item2 = (await repository.getAll()).elementAt(1);
+
   // Update an item
-  Item updatedItem = Item('Updated Item 2');
-  await repository.update(item!, updatedItem);
+  Item updatedItem = Item('Updated Item 2', item2.id);
+  await repository.update(updatedItem.id, updatedItem);
   print(
       '\nUpdated item at index 1: ${(await repository.getAll()).elementAt(1).description}');
 
-  // Delete an item
+/*   // Delete an item
   await repository.delete(item);
   print('\nAll items after deleting item at index 1:');
   allItems = await repository.getAll();

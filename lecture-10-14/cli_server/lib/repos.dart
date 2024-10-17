@@ -1,17 +1,20 @@
 part 'repo_impls.dart';
 
-
 class Item {
   final String description;
-  Item(this.description);
+  final int id;
 
-  Map<String, dynamic> toJson() => {'description': description};
+  Item(this.description, [this.id = -1]);
 
   factory Item.fromJson(Map<String, dynamic> json) {
-    return Item(json['description']);
+    return Item(json['description'], json['id']);
   }
 
+  Map<String, dynamic> toJson() {
+    return {"description": description, "id": id};
+  }
 }
+
 abstract class Repository<T> {
   List<T> _items = [];
 
@@ -23,13 +26,11 @@ abstract class Repository<T> {
     return _items;
   }
 
-  void update(T item, T newItem) {
-    var index = _items.indexWhere((element) => element == item);
-    _items[index] = newItem;
-  }
+  T getById(int id);
+
+  void update(int id, T newItem);
 
   void delete(T item) {
     _items.remove(item);
   }
 }
-

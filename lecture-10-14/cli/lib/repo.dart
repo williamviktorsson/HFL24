@@ -38,8 +38,12 @@ abstract class NetworkedRepository<T> {
     return (json as List).map((item) => deserialize(item)).toList();
   }
 
-  Future<void> update(T item, T newItem) async {
-    throw Error();
+  Future<void> update(int id, T newItem) async {
+    final uri = Uri.parse("${host}:${port}/${resource}/${id}");
+
+    await http.put(uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(serialize(newItem)));
   }
 
   Future<void> delete(T item) async {
