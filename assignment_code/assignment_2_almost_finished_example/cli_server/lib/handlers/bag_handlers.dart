@@ -12,6 +12,8 @@ Future<Response> postBagHandler(Request request) async {
   final json = jsonDecode(data);
   var bag = Bag.fromJson(json);
 
+  bag.brand = Brand(name: "Boogle");
+
   bag = await repo.create(bag);
 
   return Response.ok(
@@ -24,6 +26,8 @@ Future<Response> getBagsHandler(Request request) async {
   final bags = await repo.getAll();
 
   final payload = bags.map((e) => e.toJson()).toList();
+
+  print(payload);
 
   return Response.ok(
     jsonEncode(payload),

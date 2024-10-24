@@ -24,6 +24,7 @@ class ServerConfig {
 
     store = openStore();
 
+
     router.post('/items', postItemHandler); // create an item
     router.get('/items', getItemsHandler); // get all items
     router.get('/items/<id>', getItemHandler); // get specific item

@@ -22,7 +22,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
       id: const obx_int.IdUid(1, 5734646974315608523),
       name: 'Bag',
-      lastPropertyId: const obx_int.IdUid(3, 5912940655653160131),
+      lastPropertyId: const obx_int.IdUid(4, 3683973677159919657),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
@@ -38,6 +38,11 @@ final _entities = <obx_int.ModelEntity>[
         obx_int.ModelProperty(
             id: const obx_int.IdUid(3, 5912940655653160131),
             name: 'itemsInDb',
+            type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(4, 3683973677159919657),
+            name: 'brandInDb',
             type: 9,
             flags: 0)
       ],
@@ -59,6 +64,25 @@ final _entities = <obx_int.ModelEntity>[
             name: 'id',
             type: 6,
             flags: 1)
+      ],
+      relations: <obx_int.ModelRelation>[],
+      backlinks: <obx_int.ModelBacklink>[]),
+  obx_int.ModelEntity(
+      id: const obx_int.IdUid(3, 8689946628922675237),
+      name: 'Brand',
+      lastPropertyId: const obx_int.IdUid(2, 4328878777886035668),
+      flags: 0,
+      properties: <obx_int.ModelProperty>[
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(1, 8606877161271006421),
+            name: 'id',
+            type: 6,
+            flags: 1),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(2, 4328878777886035668),
+            name: 'name',
+            type: 9,
+            flags: 0)
       ],
       relations: <obx_int.ModelRelation>[],
       backlinks: <obx_int.ModelBacklink>[])
@@ -98,7 +122,7 @@ obx.Store openStore(
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
       entities: _entities,
-      lastEntityId: const obx_int.IdUid(2, 8451282599434045579),
+      lastEntityId: const obx_int.IdUid(3, 8689946628922675237),
       lastIndexId: const obx_int.IdUid(0, 0),
       lastRelationId: const obx_int.IdUid(0, 0),
       lastSequenceId: const obx_int.IdUid(0, 0),
@@ -122,10 +146,14 @@ obx_int.ModelDefinition getObjectBoxModel() {
         objectToFB: (Bag object, fb.Builder fbb) {
           final descriptionOffset = fbb.writeString(object.description);
           final itemsInDbOffset = fbb.writeString(object.itemsInDb);
-          fbb.startTable(4);
+          final brandInDbOffset = object.brandInDb == null
+              ? null
+              : fbb.writeString(object.brandInDb!);
+          fbb.startTable(5);
           fbb.addOffset(0, descriptionOffset);
           fbb.addInt64(1, object.id);
           fbb.addOffset(2, itemsInDbOffset);
+          fbb.addOffset(3, brandInDbOffset);
           fbb.finish(fbb.endTable());
           return object.id;
         },
@@ -139,7 +167,9 @@ obx_int.ModelDefinition getObjectBoxModel() {
               const fb.Int64Reader().vTableGet(buffer, rootOffset, 6, 0);
           final object = Bag(description: descriptionParam, id: idParam)
             ..itemsInDb = const fb.StringReader(asciiOptimization: true)
-                .vTableGet(buffer, rootOffset, 8, '');
+                .vTableGet(buffer, rootOffset, 8, '')
+            ..brandInDb = const fb.StringReader(asciiOptimization: true)
+                .vTableGetNullable(buffer, rootOffset, 10);
 
           return object;
         }),
@@ -170,6 +200,33 @@ obx_int.ModelDefinition getObjectBoxModel() {
           final object = Item(descriptionParam, idParam);
 
           return object;
+        }),
+    Brand: obx_int.EntityDefinition<Brand>(
+        model: _entities[2],
+        toOneRelations: (Brand object) => [],
+        toManyRelations: (Brand object) => {},
+        getId: (Brand object) => object.id,
+        setId: (Brand object, int id) {
+          object.id = id;
+        },
+        objectToFB: (Brand object, fb.Builder fbb) {
+          final nameOffset = fbb.writeString(object.name);
+          fbb.startTable(3);
+          fbb.addInt64(0, object.id);
+          fbb.addOffset(1, nameOffset);
+          fbb.finish(fbb.endTable());
+          return object.id;
+        },
+        objectFromFB: (obx.Store store, ByteData fbData) {
+          final buffer = fb.BufferContext(fbData);
+          final rootOffset = buffer.derefObject(0);
+          final nameParam = const fb.StringReader(asciiOptimization: true)
+              .vTableGet(buffer, rootOffset, 6, '');
+          final idParam =
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+          final object = Brand(name: nameParam, id: idParam);
+
+          return object;
         })
   };
 
@@ -188,6 +245,10 @@ class Bag_ {
   /// See [Bag.itemsInDb].
   static final itemsInDb =
       obx.QueryStringProperty<Bag>(_entities[0].properties[2]);
+
+  /// See [Bag.brandInDb].
+  static final brandInDb =
+      obx.QueryStringProperty<Bag>(_entities[0].properties[3]);
 }
 
 /// [Item] entity fields to define ObjectBox queries.
@@ -198,4 +259,14 @@ class Item_ {
 
   /// See [Item.id].
   static final id = obx.QueryIntegerProperty<Item>(_entities[1].properties[1]);
+}
+
+/// [Brand] entity fields to define ObjectBox queries.
+class Brand_ {
+  /// See [Brand.id].
+  static final id = obx.QueryIntegerProperty<Brand>(_entities[2].properties[0]);
+
+  /// See [Brand.name].
+  static final name =
+      obx.QueryStringProperty<Brand>(_entities[2].properties[1]);
 }
