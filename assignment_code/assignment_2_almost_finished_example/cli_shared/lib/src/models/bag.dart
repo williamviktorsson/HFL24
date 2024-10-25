@@ -77,8 +77,11 @@ class Bag {
     }
   }
 
-  Bag({required this.description, List<Item>? items, this.id = -1, this.brand})
-      : items = items ?? [];
+  Bag(
+      {required this.description,
+      this.items = const [],
+      this.id = -1,
+      this.brand});
 
   factory Bag.fromJson(Map<String, dynamic> json) {
     return Bag(
