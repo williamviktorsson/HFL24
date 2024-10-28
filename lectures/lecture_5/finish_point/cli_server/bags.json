@@ -1,0 +1,20 @@
+[
+    {
+        "description": "bigly",
+        "id": "5e5ef2cf-1ac5-4962-a279-be1105c10d44",
+        "items": [
+            {
+                "description": "willy",
+                "id": "543de0a7-74ff-41c4-b82a-2fb5dce13f9b"
+            },
+            {
+                "description": "willy",
+                "id": "543de0a7-74ff-41c4-b82a-2fb5dce13f9b"
+            }
+        ],
+        "brand": {
+            "name": "Boogle",
+            "id": "9906edf5-3f96-4d70-b495-22dc17eee1ac"
+        }
+    }
+]
