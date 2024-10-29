@@ -1,14 +1,13 @@
 import 'package:cli_shared/cli_shared.dart';
 
 class Validator {
-// check that nullable string is number
   static bool isNumber(String? value) {
     return switch (value?.tryParseInt()) { (int _) => true, _ => false };
   }
 
   static bool isString(String? value) {
     return switch (value) {
-      (String string) when string.isNotEmpty=> true,
+      (String string) when string.isNotEmpty => true,
       _ => false
     };
   }

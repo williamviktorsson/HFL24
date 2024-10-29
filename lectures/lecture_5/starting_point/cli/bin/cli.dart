@@ -9,6 +9,17 @@ var state = 5;
 void main(List<String> args) async {
   // main isolate will handle printing seconds
 
+  // everything runs on the same main isolate
+  await Isolate.run(() async {
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      state++;
+      print(state.toString() + " in second isolate");
+    });
+    await Isolate.run(() async {
+      await MainMenu.prompt();
+    });
+  });
+
   var one = Isolate.run(() async {
     await Future.delayed(Duration(seconds: 5));
     return Id(id: "id");
@@ -29,16 +40,5 @@ void main(List<String> args) async {
 
   var tuple = await Future.wait([one, two, three, four]).then((results) {
     return (results[0], results[1], results[2], results[3]);
-  });
-
-  // everything runs on the same main isolate
-  await Isolate.run(() async {
-    Timer.periodic(Duration(seconds: 1), (timer) {
-      state++;
-      print(state.toString() + " in second isolate");
-    });
-    await Isolate.run(() async {
-      await MainMenu.prompt();
-    });
   });
 }

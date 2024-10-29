@@ -5,7 +5,7 @@ import 'package:cli_server/router_config.dart';
 import 'package:cli_shared/cli_shared.dart';
 
 class BagRepository implements RepositoryInterface<Bag> {
-  String path = "./bags.json";
+  String path = "./bags.json"; 
 
   @override
   Future<Bag> create(Bag bag) async {

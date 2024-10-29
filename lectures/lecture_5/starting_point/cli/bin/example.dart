@@ -31,7 +31,7 @@ void main() async {
 
   allItems = await repository.getAll();
 
-  var [_, second] = allItems;
+  var [_, second,...] = allItems;
 
   print('\nUpdated item at index 1: ${second.description}');
 
