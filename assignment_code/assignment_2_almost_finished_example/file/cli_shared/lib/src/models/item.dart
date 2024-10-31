@@ -15,3 +15,9 @@ class Item {
     return {"description": description, "id": id};
   }
 }
+
+class ItemFactory {
+  static Future<Item> itemfromJson(Map<String, dynamic> json) async {
+    return Item(json['description'], json['id']);
+  }
+}

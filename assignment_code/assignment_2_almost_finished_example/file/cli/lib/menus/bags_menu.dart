@@ -38,10 +38,5 @@ class BagsMenu {
     }
   }
 
-  static int? choice() {
-    // get user input for choice
-    print('Enter choice: ');
-    var choice = int.parse(stdin.readLineSync()!);
-    return choice;
-  }
+
 }

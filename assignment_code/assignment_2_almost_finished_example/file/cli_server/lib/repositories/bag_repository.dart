@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cli_server/router_config.dart';
 import 'package:cli_shared/cli_shared.dart';
+import 'package:cli_server/models/bag.dart';
 
 class BagRepository implements RepositoryInterface<Bag> {
   String path = "./bags.json";
@@ -22,7 +23,7 @@ class BagRepository implements RepositoryInterface<Bag> {
 
     var json = jsonDecode(content) as List;
 
-    json = [...json, bag.toJson()];
+    json = [...json, BagFactory.toJsonServer(bag)];
 
     await file.writeAsString(jsonEncode(json));
 
@@ -42,9 +43,9 @@ class BagRepository implements RepositoryInterface<Bag> {
 
     String content = await file.readAsString();
 
-    List<Bag> bags = (jsonDecode(content) as List)
-        .map((json) => Bag.fromJson(json))
-        .toList();
+    List<Bag> bags = await Future.wait((jsonDecode(content) as List)
+        .map((json) => BagFactory.fromJsonServer(json))
+        .toList());
 
     for (var bag in bags) {
       if (bag.id == id) {
@@ -67,9 +68,9 @@ class BagRepository implements RepositoryInterface<Bag> {
 
     String content = await file.readAsString();
 
-    List<Bag> bags = (jsonDecode(content) as List)
-        .map((json) => Bag.fromJson(json))
-        .toList();
+    List<Bag> bags = await Future.wait((jsonDecode(content) as List)
+        .map((json) => BagFactory.fromJsonServer(json))
+        .toList());
 
     return bags;
   }
@@ -87,16 +88,16 @@ class BagRepository implements RepositoryInterface<Bag> {
 
     String content = await file.readAsString();
 
-    List<Bag> bags = (jsonDecode(content) as List)
-        .map((json) => Bag.fromJson(json))
-        .toList();
+    List<Bag> bags = await Future.wait((jsonDecode(content) as List)
+        .map((json) => BagFactory.fromJsonServer(json))
+        .toList());
 
     for (var i = 0; i < bags.length; i++) {
       if (bags[i].id == id) {
         bags[i] = newBag;
 
-        await file.writeAsString(
-            jsonEncode(bags.map((bag) => bag.toJson()).toList()));
+        await file.writeAsString(jsonEncode(
+            bags.map((bag) => BagFactory.toJsonServer(bag)).toList()));
 
         return newBag;
       }
@@ -118,15 +119,15 @@ class BagRepository implements RepositoryInterface<Bag> {
 
     String content = await file.readAsString();
 
-    List<Bag> bags = (jsonDecode(content) as List)
-        .map((json) => Bag.fromJson(json))
-        .toList();
+    List<Bag> bags = await Future.wait((jsonDecode(content) as List)
+        .map((json) => BagFactory.fromJsonServer(json))
+        .toList());
 
     for (var i = 0; i < bags.length; i++) {
       if (bags[i].id == id) {
         final bag = bags.removeAt(i);
-        await file.writeAsString(
-            jsonEncode(bags.map((bag) => bag.toJson()).toList()));
+        await file.writeAsString(jsonEncode(
+            bags.map((bag) => BagFactory.toJsonServer(bag)).toList()));
         return bag;
       }
     }
