@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cli_server/router_config.dart';
 import 'package:cli_shared/cli_shared.dart';
 
+
 class BagRepository implements RepositoryInterface<Bag> {
   final bagBox = ServerConfig.instance.bagBox;
 

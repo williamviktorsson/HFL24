@@ -1,6 +1,7 @@
+import 'package:equatable/equatable.dart';
 import 'package:uuid/uuid.dart';
 
-class Item {
+class Item extends Equatable {
   String description;
 
   String id;
@@ -14,6 +15,16 @@ class Item {
   Map<String, dynamic> toJson() {
     return {"description": description, "id": id};
   }
+
+  @override
+  bool operator ==(Object other) {
+    // TODO: implement ==
+    return other is Item && other.id == id && other.description == description;
+  }
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [description, id];
 }
 
 class ItemFactory {

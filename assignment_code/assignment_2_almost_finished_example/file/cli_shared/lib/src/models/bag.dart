@@ -1,8 +1,9 @@
+import 'package:equatable/equatable.dart';
 import 'package:uuid/uuid.dart';
 
 import 'item.dart';
 
-class Brand {
+class Brand extends Equatable {
   String id;
   String name;
   Brand({required this.name, String? id}) : id = id ?? Uuid().v4();
@@ -20,9 +21,13 @@ class Brand {
       "id": id,
     };
   }
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [id, name];
 }
 
-class Bag {
+class Bag extends Equatable {
   String description;
 
   List<Item> items;
@@ -56,4 +61,7 @@ class Bag {
       'brand': brand.toJson()
     };
   }
+
+  @override
+  List<Object?> get props => [description, items, brand, id];
 }

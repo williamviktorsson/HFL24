@@ -9,7 +9,7 @@ class BagRepository implements RepositoryInterface<Bag> {
   String path = "./bags.json";
 
   @override
-  Future<Bag> create(Bag bag) async {
+  Future<Bag> create(  bag) async {
     File file = File(path);
 
     try {

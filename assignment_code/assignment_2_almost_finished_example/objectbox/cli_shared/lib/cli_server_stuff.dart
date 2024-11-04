@@ -8,3 +8,5 @@ export 'src/models/item.dart';
 export 'src/models/bag.dart';
 
 // TODO: Export any libraries intended for clients of this package.
+
+export 'objectbox.g.dart';

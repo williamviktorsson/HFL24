@@ -1,5 +1,5 @@
 import 'package:cli_server/router_config.dart';
-import 'package:cli_shared/cli_shared.dart';
+import 'package:cli_shared/cli_server_stuff.dart';
 
 class BagRepository implements RepositoryInterface<Bag> {
   Box<Bag> bagBox = ServerConfig.instance.store.box<Bag>();
@@ -7,6 +7,9 @@ class BagRepository implements RepositoryInterface<Bag> {
   @override
   Future<Bag> create(Bag bag) async {
     bagBox.put(bag, mode: PutMode.insert);
+
+    // firebase API call store in collection "bags"
+    // use HTTP API
 
     // above command did not error
     return bag;

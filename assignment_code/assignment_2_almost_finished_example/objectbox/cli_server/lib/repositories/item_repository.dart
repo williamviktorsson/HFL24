@@ -1,5 +1,5 @@
 import 'package:cli_server/router_config.dart';
-import 'package:cli_shared/cli_shared.dart';
+import 'package:cli_shared/cli_server_stuff.dart';
 
 class ItemRepository implements RepositoryInterface<Item> {
   Box<Item> itemBox = ServerConfig.instance.store.box<Item>();
