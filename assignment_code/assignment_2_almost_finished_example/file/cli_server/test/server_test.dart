@@ -28,11 +28,17 @@ void main() {
 
     BagRepository().create(bag);
 
-    var returnedBag = await BagRepository().create(bag);
-    expect(
-      returnedBag,
-      bag,
-    );
+    var result = await BagRepository().create(bag);
+
+    switch (result) {
+      case Success<Bag, String>(data: var returnedBag):
+        expect(
+          returnedBag,
+          bag,
+        );
+      case Failure<Bag, String>():
+        fail("bagrepository should return success on bag create");
+    }
   });
 
   test('create_bag_handler', () async {

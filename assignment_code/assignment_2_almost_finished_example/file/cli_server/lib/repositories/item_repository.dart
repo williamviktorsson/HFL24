@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cli_server/router_config.dart';
 import 'package:cli_shared/cli_shared.dart';
 
-class ItemRepository implements RepositoryInterface<Item> {
+class ItemRepository implements RepositoryInterface<Item, String> {
   String path = "./items.json";
 
   @override
-  Future<Item> create(Item item) async {
+  Future<Result<Item, String>> create(item) async {
     File file = File(path);
 
     try {
@@ -15,21 +16,27 @@ class ItemRepository implements RepositoryInterface<Item> {
       await file.writeAsString(jsonEncode([]));
     } catch (e) {
       // file already exists
+      // dont try to create a database file if it exists.
     }
 
-    String content = await file.readAsString();
+    try {
+      String content = await file.readAsString();
 
-    var json = jsonDecode(content) as List;
+      var json = jsonDecode(content) as List;
 
-    json = [...json, item.toJson()];
+      json = [...json, item.toJson()];
 
-    await file.writeAsString(jsonEncode(json));
+      await file.writeAsString(jsonEncode(json));
+    } catch (e) {
+      // TODO: Log error information so Dennis can check it later
+      return Result.failure(reason: "failed to write item to database");
+    }
 
-    return item;
+    return Result.success(value: item);
   }
 
   @override
-  Future<Item?> getById(String id) async {
+  Future<Result<Item, String>> getById(String id) async {
     File file = File(path);
 
     try {
@@ -37,24 +44,25 @@ class ItemRepository implements RepositoryInterface<Item> {
       await file.writeAsString(jsonEncode([]));
     } catch (e) {
       // file already exists
+      return Result.failure(reason: "file already exists");
     }
 
     String content = await file.readAsString();
 
-    List<Item> items = (jsonDecode(content) as List)
+    List<Item> items = ((jsonDecode(content) as List)
         .map((json) => Item.fromJson(json))
-        .toList();
+        .toList());
 
     for (var item in items) {
       if (item.id == id) {
-        return item;
+        return Result.success(value: item);
       }
     }
-    return null;
+    return Result.failure(reason: "no item found with id ${id}");
   }
 
   @override
-  Future<List<Item>> getAll() async {
+  Future<Result<List<Item>, String>> getAll() async {
     File file = File(path);
 
     try {
@@ -70,11 +78,11 @@ class ItemRepository implements RepositoryInterface<Item> {
         .map((json) => Item.fromJson(json))
         .toList();
 
-    return items;
+    return Result.success(value: items);
   }
 
   @override
-  Future<Item?> update(String id, Item newItem) async {
+  Future<Result<Item, String>> update(String id, Item newItem) async {
     File file = File(path);
 
     try {
@@ -97,15 +105,15 @@ class ItemRepository implements RepositoryInterface<Item> {
         await file.writeAsString(
             jsonEncode(items.map((item) => item.toJson()).toList()));
 
-        return newItem;
+        return Result.success(value: newItem);
       }
     }
 
-    return null;
+    return Result.failure(reason: "no item found with id ${id}");
   }
 
   @override
-  Future<Item?> delete(String id) async {
+  Future<Result<Item, String>> delete(String id) async {
     File file = File(path);
 
     try {
@@ -126,10 +134,10 @@ class ItemRepository implements RepositoryInterface<Item> {
         final item = items.removeAt(i);
         await file.writeAsString(
             jsonEncode(items.map((item) => item.toJson()).toList()));
-        return item;
+        return Result.success(value: item);
       }
     }
 
-    return null;
+    return Result.failure(reason: "no item found with id ${id}");
   }
 }

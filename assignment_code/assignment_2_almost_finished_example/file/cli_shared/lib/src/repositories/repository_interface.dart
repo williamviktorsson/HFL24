@@ -1,7 +1,9 @@
-abstract interface class RepositoryInterface<T> {
-  Future<T?> create(T item);
-  Future<List<T>> getAll();
-  Future<T?> getById(String id);
-  Future<T?> update(String id, T item);
-  Future<T?> delete(String id);
+import 'package:cli_shared/src/models/result.dart';
+
+abstract interface class RepositoryInterface<T, E> {
+  Future<Result<T, E>> create(T item);
+  Future<Result<List<T>, E>> getAll();
+  Future<Result<T, E>> getById(String id);
+  Future<Result<T, E>> update(String id, T item);
+  Future<Result<T, E>> delete(String id);
 }

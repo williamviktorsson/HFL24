@@ -5,11 +5,11 @@ import 'package:cli_server/router_config.dart';
 import 'package:cli_shared/cli_shared.dart';
 import 'package:cli_server/models/bag.dart';
 
-class BagRepository implements RepositoryInterface<Bag> {
+class BagRepository implements RepositoryInterface<Bag, String> {
   String path = "./bags.json";
 
   @override
-  Future<Bag> create(  bag) async {
+  Future<Result<Bag, String>> create(bag) async {
     File file = File(path);
 
     try {
@@ -17,21 +17,27 @@ class BagRepository implements RepositoryInterface<Bag> {
       await file.writeAsString(jsonEncode([]));
     } catch (e) {
       // file already exists
+      // dont try to create a database file if it exists.
     }
 
-    String content = await file.readAsString();
+    try {
+      String content = await file.readAsString();
 
-    var json = jsonDecode(content) as List;
+      var json = jsonDecode(content) as List;
 
-    json = [...json, BagFactory.toJsonServer(bag)];
+      json = [...json, BagFactory.toJsonServer(bag)];
 
-    await file.writeAsString(jsonEncode(json));
+      await file.writeAsString(jsonEncode(json));
+    } catch (e) {
+      // TODO: Log error information so Dennis can check it later
+      return Result.failure(reason: "failed to write bag to database");
+    }
 
-    return bag;
+    return Result.success(value: bag);
   }
 
   @override
-  Future<Bag?> getById(String id) async {
+  Future<Result<Bag, String>> getById(String id) async {
     File file = File(path);
 
     try {
@@ -39,6 +45,7 @@ class BagRepository implements RepositoryInterface<Bag> {
       await file.writeAsString(jsonEncode([]));
     } catch (e) {
       // file already exists
+      return Result.failure(reason: "file already exists");
     }
 
     String content = await file.readAsString();
@@ -49,14 +56,14 @@ class BagRepository implements RepositoryInterface<Bag> {
 
     for (var bag in bags) {
       if (bag.id == id) {
-        return bag;
+        return Result.success(value: bag);
       }
     }
-    return null;
+    return Result.failure(reason: "no bag found with id ${id}");
   }
 
   @override
-  Future<List<Bag>> getAll() async {
+  Future<Result<List<Bag>, String>> getAll() async {
     File file = File(path);
 
     try {
@@ -72,11 +79,11 @@ class BagRepository implements RepositoryInterface<Bag> {
         .map((json) => BagFactory.fromJsonServer(json))
         .toList());
 
-    return bags;
+    return Result.success(value: bags);
   }
 
   @override
-  Future<Bag?> update(String id, Bag newBag) async {
+  Future<Result<Bag, String>> update(String id, Bag newBag) async {
     File file = File(path);
 
     try {
@@ -99,15 +106,15 @@ class BagRepository implements RepositoryInterface<Bag> {
         await file.writeAsString(jsonEncode(
             bags.map((bag) => BagFactory.toJsonServer(bag)).toList()));
 
-        return newBag;
+        return Result.success(value: newBag);
       }
     }
 
-    return null;
+    return Result.failure(reason: "no bag found with id ${id}");
   }
 
   @override
-  Future<Bag?> delete(String id) async {
+  Future<Result<Bag, String>> delete(String id) async {
     File file = File(path);
 
     try {
@@ -128,10 +135,10 @@ class BagRepository implements RepositoryInterface<Bag> {
         final bag = bags.removeAt(i);
         await file.writeAsString(jsonEncode(
             bags.map((bag) => BagFactory.toJsonServer(bag)).toList()));
-        return bag;
+        return Result.success(value: bag);
       }
     }
 
-    return null;
+    return Result.failure(reason: "no bag found with id ${id}");
   }
 }
