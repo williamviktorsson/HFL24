@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cli_server/router_config.dart';
 import 'package:cli_shared/cli_shared.dart';
 import 'package:cli_server/models/bag.dart';
 

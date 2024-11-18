@@ -9,19 +9,6 @@ import 'package:test/test.dart';
 void main() {
   final port = '10057';
   final host = 'http://localhost:$port';
-  late Process p;
-
-  setUp(() async {
-    p = await Process.start(
-      'dart',
-      ['run', 'bin/cli_server.dart'],
-      environment: {'PORT': port},
-    );
-    // Wait for server to start and print to stdout.
-    await p.stdout.first;
-  });
-
-  tearDown(() => p.kill());
 
   test('create_bag_repository', () async {
     Bag bag = Bag(description: "description", brand: Brand(name: "name"));
