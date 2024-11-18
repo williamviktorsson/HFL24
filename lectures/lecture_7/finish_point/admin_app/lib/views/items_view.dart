@@ -1,6 +1,7 @@
 import 'package:client_repositories/async_http_repos.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
+import 'package:shared_widgets/shared_widgets.dart';
 
 class ItemsView extends StatefulWidget {
   ItemsView({super.key});
@@ -25,8 +26,8 @@ class _ItemsViewState extends State<ItemsView> {
             return ListView.builder(
                 itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(snapshot.data![index].description),
+                  return ItemWidget(
+                    item: snapshot.data![index],
                   );
                 });
           }
@@ -40,27 +41,39 @@ class _ItemsViewState extends State<ItemsView> {
       ),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-
             // show dialog to create new item and confirm
 
             var result = await showDialog<String>(
                 context: context,
                 builder: (context) {
+                  TextEditingController controller = TextEditingController();
+
                   return AlertDialog(
                     title: Text("Create new item"),
                     content: TextField(
+                      focusNode: FocusNode(),
+                      controller: controller,
                       decoration:
                           InputDecoration(hintText: "Enter item description"),
-                      onSubmitted: (value) {
-                        Navigator.of(context).pop(value);
-                      },
                     ),
                     actions: [
                       TextButton(
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: Text("Cancel"))
+                          child: Text("Cancel")),
+                      TextButton(
+                          onPressed: () {
+                            if (controller.text.length < 1) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          "Failed to provide description")));
+                            } else {
+                              Navigator.of(context).pop(controller.text);
+                            }
+                          },
+                          child: Text("Create")),
                     ],
                   );
                 });

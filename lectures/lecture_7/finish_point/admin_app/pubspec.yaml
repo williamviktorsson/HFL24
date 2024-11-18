@@ -38,6 +38,8 @@ dependencies:
 
   shared: 
     path: '../shared'
+  shared_widgets: 
+    path: '../shared_widgets'
   client_repositories: 
     path: '../client_repositories'
 
