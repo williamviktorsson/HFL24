@@ -1,9 +1,21 @@
+import 'dart:ui';
+
 import 'package:admin_app/views/example_view.dart';
 import 'package:admin_app/views/items_view.dart';
 import 'package:flutter/material.dart';
 
 void main() {
   runApp(const MyApp());
+}
+
+class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  // Override behavior methods and getters like dragDevices
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        // etc.
+      };
 }
 
 class MyApp extends StatelessWidget {
@@ -13,6 +25,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scrollBehavior: MyCustomScrollBehavior(),
       title: 'Items Managing App',
       theme: ThemeData(
         // This is the theme of your application.

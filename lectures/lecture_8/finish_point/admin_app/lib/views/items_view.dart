@@ -1,6 +1,7 @@
 import 'package:client_repositories/async_http_repos.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
+import 'package:shared_widgets/shared_widgets.dart';
 
 class ItemsView extends StatefulWidget {
   ItemsView({super.key});
@@ -25,30 +26,22 @@ class _ItemsViewState extends State<ItemsView> {
         future: getItems,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return RefreshIndicator(
-              onRefresh: () async {
-                var items = await ItemRepository().getAll();
-                setState(() {
-                  getItems = Future.value(items);
+            return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  var item = snapshot.data![index];
+                  return ListTile(
+                    selectedTileColor: Colors.blueAccent,
+                    selected: index == _selectedIndex,
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = index;
+                        selectedItem = item;
+                      });
+                    },
+                    title: Text(item.description),
+                  );
                 });
-              },
-              child: ListView.builder(
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    var item = snapshot.data![index];
-                    return ListTile(
-                      selected: index == _selectedIndex,
-                      selectedTileColor: Colors.blue[100],
-                      onTap: () {
-                        setState(() {
-                          _selectedIndex = index;
-                          selectedItem = item;
-                        });
-                      },
-                      title: Text(item.description),
-                    );
-                  }),
-            );
           }
 
           if (snapshot.hasError) {
@@ -67,26 +60,15 @@ class _ItemsViewState extends State<ItemsView> {
             selectedItem = null;
           });
         },
-        onItemDeleted: (item) async {
-          await ItemRepository().delete(item.id);
-
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content:
-                    Text("Item: ${item.description}, deleted successfully")));
-          }
-
-          setState(() {
-            getItems = ItemRepository().getAll();
-          });
-        },
         onItemCreated: (item) async {
           await ItemRepository().create(item);
 
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content:
-                    Text("Item: ${item.description}, created successfully")));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Item ${item.description} created"),
+              ),
+            );
           }
 
           setState(() {
@@ -97,9 +79,29 @@ class _ItemsViewState extends State<ItemsView> {
           await ItemRepository().update(item.id, item);
 
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content:
-                    Text("Item: ${item.description}, updated successfully")));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Item ${item.description} updated"),
+              ),
+            );
+          }
+
+          setState(() {
+            getItems = ItemRepository().getAll();
+          });
+        },
+        onItemDeleted: (item) async {
+          await ItemRepository().delete(item.id);
+
+          _selectedIndex=-1;
+          selectedItem = null;
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Item ${item.description} deleted"),
+              ),
+            );
           }
 
           setState(() {
@@ -163,10 +165,12 @@ class AnimatedActionButtons extends StatelessWidget {
           child: selectedItem != null
               ? FloatingActionButton(
                   onPressed: () async {
-                    var result = await editItemDialog(context, selectedItem!);
+                    var item = await editItemDialog(context, selectedItem!);
 
-                    if (result != null) {
-                      onItemEdited(result);
+                    if (item != null) {
+                      // show snackbar showing item description success message
+
+                      onItemEdited(item);
                     }
                   },
                   child: const Icon(Icons.edit),
@@ -179,7 +183,9 @@ class AnimatedActionButtons extends StatelessWidget {
           reverseDuration: const Duration(milliseconds: 200),
           child: selectedItem != null
               ? FloatingActionButton(
-                  onPressed: () => onItemDeleted(selectedItem!),
+                  onPressed: () {
+                    onItemDeleted(selectedItem!);
+                  },
                   child: const Icon(Icons.delete),
                 )
               : const SizedBox.shrink(),
@@ -195,10 +201,12 @@ class AnimatedActionButtons extends StatelessWidget {
               : FloatingActionButton.extended(
                   label: const Text("Add item"),
                   onPressed: () async {
-                    var result = await createItemDialog(context);
+                    var item = await createItemDialog(context);
 
-                    if (result != null) {
-                      onItemCreated(Item(result));
+                    if (item != null) {
+                      // show snackbar showing item description success message
+
+                      onItemCreated(item);
                     }
                   },
                 ),
@@ -207,103 +215,20 @@ class AnimatedActionButtons extends StatelessWidget {
     );
   }
 
-  Future<String?> createItemDialog(BuildContext context) {
-    return showModalBottomSheet<String>(
-        context: context,
-        builder: (context) {
-          String? description;
-          String? more;
-
-          FocusNode focusNode = FocusNode();
-
-          final formKey = GlobalKey<FormState>();
-
-          save() {
-            if (formKey.currentState!.validate()) {
-              formKey.currentState!.save();
-              Navigator.of(context).pop(description);
-            }
-          }
-
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text(
-                "Create new item",
-                style: TextStyle(fontSize: 24),
-                textAlign: TextAlign.start,
-              ),
-              Divider(),
-              Expanded(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    children: [
-                      // add big Title text
-                      TextFormField(
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please provide a description";
-                          }
-                          return null;
-                        },
-                        autofocus: true,
-                        decoration: const InputDecoration(
-                            hintText: "Enter item description"),
-                        onFieldSubmitted: (_) {
-                          focusNode.requestFocus();
-                        },
-                        onSaved: (newValue) => description = newValue,
-                      ),
-                      TextFormField(
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please provide something more";
-                          }
-                          return null;
-                        },
-                        onSaved: (newValue) => more = newValue,
-                        focusNode: focusNode,
-                        onFieldSubmitted: (_) => save(),
-                        decoration: const InputDecoration(
-                            hintText: "Enter something more"),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              OverflowBar(
-                spacing: 8,
-                children: [
-                  FilledButton.tonal(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text("Cancel")),
-                  FilledButton(
-                      onPressed: () => save(), child: const Text("Create")),
-                ],
-              )
-            ]),
-          );
-        });
-  }
-
-  Future<Item?> editItemDialog(BuildContext context, Item existingItem) {
+  Future<Item?> createItemDialog(BuildContext context) {
     return showModalBottomSheet<Item>(
         context: context,
         builder: (context) {
-          String? description =
-              existingItem.description; // Pre-fill with existing item
-          String? more;
-          FocusNode focusNode = FocusNode();
-          final formKey = GlobalKey<FormState>();
+          String? description;
+
+          final key = GlobalKey<FormState>();
+
+          final focusNode = FocusNode();
 
           save() {
-            if (formKey.currentState!.validate()) {
-              formKey.currentState!.save();
-              Navigator.of(context).pop(Item(description!, existingItem.id));
+            if (key.currentState!.validate()) {
+              key.currentState!.save();
+              Navigator.of(context).pop(Item(description!));
             }
           }
 
@@ -311,68 +236,118 @@ class AnimatedActionButtons extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text(
-                "Edit item", // Changed title
-                style: TextStyle(fontSize: 24),
-                textAlign: TextAlign.start,
+              Text(
+                "Create new item",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               Divider(),
               Expanded(
                 child: Form(
-                  key: formKey,
+                  key: key,
                   child: Column(
                     children: [
                       TextFormField(
-                        initialValue: existingItem
-                            .description, // Pre-fill with existing item
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please provide a description";
-                          }
-                          return null;
-                        },
                         autofocus: true,
-                        decoration: const InputDecoration(
-                            hintText: "Enter item description"),
-                        onFieldSubmitted: (_) {
-                          focusNode.requestFocus();
-                        },
-                        onSaved: (newValue) => description = newValue,
-                      ),
-                      TextFormField(
-                        initialValue: more, // Pre-fill more field if needed
+                        decoration:
+                            InputDecoration(hintText: "Enter item description"),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return "Please provide something more";
+                            return "Please enter a description";
                           }
                           return null;
                         },
-                        onSaved: (newValue) => more = newValue,
-                        focusNode: focusNode,
-                        onFieldSubmitted: (_) => save(),
-                        decoration: const InputDecoration(
-                            hintText: "Enter something more"),
+                        onSaved: (value) => description = value,
+                        onFieldSubmitted: (value) {
+                          save();
+                        },
                       ),
                     ],
                   ),
                 ),
               ),
-              OverflowBar(
-                spacing: 8,
-                children: [
-                  FilledButton.tonal(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text("Cancel")),
-                  FilledButton(
-                      onPressed: () => save(),
-                      child: const Text("Save") // Changed button text
-                      ),
-                ],
-              )
+              OverflowBar(spacing: 8, children: [
+                FilledButton.tonal(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("Cancel")),
+                FilledButton(
+                  onPressed: () {
+                    save();
+                  },
+                  child: Text("Create"),
+                )
+              ]),
             ]),
           );
         });
   }
+}
+
+Future<Item?> editItemDialog(BuildContext context, Item item) {
+  return showModalBottomSheet<Item>(
+      context: context,
+      builder: (context) {
+        String? description = item.description;
+
+        final key = GlobalKey<FormState>();
+
+        save() {
+          if (key.currentState!.validate()) {
+            key.currentState!.save();
+
+            Navigator.of(context).pop(Item(description!, item.id));
+          }
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              "Create new item",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Divider(),
+            Expanded(
+              child: Form(
+                key: key,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      initialValue: item.description,
+                      autofocus: true,
+                      decoration:
+                          InputDecoration(hintText: "Enter item description"),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Please enter a description";
+                        }
+                        return null;
+                      },
+                      onSaved: (value) => description = value,
+                      onFieldSubmitted: (value) {
+                        save();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            OverflowBar(spacing: 8, children: [
+              FilledButton.tonal(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Cancel")),
+              FilledButton(
+                onPressed: () {
+                  save();
+                },
+                child: Text("Create"),
+              )
+            ]),
+          ]),
+        );
+      });
 }
