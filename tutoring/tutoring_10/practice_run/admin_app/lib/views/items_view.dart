@@ -1,7 +1,6 @@
 import 'package:client_repositories/async_http_repos.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
-import 'package:shared_widgets/shared_widgets.dart';
 
 class ItemsView extends StatefulWidget {
   ItemsView({super.key});
