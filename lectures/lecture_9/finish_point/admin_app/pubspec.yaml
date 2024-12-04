@@ -43,6 +43,7 @@ dependencies:
   client_repositories: 
     path: '../client_repositories'
   google_fonts: ^6.2.1
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:

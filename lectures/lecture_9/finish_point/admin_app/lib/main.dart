@@ -2,13 +2,42 @@ import 'package:admin_app/christmas_theme.dart';
 import 'package:admin_app/views/example_view.dart';
 import 'package:admin_app/views/items_view.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+enum AuthStatus {
+  unauthenticated,
+  authenticating,
+  authenticated,
+}
+
+class AuthService extends ChangeNotifier {
+  AuthStatus _status = AuthStatus.unauthenticated;
+  AuthStatus get status => _status;
+
+  Future<void> login() async {
+    _status = AuthStatus.authenticating;
+    notifyListeners();
+
+    try {
+      // Simulate API call
+      await Future.delayed(const Duration(seconds: 2));
+      _status = AuthStatus.authenticated;
+    } catch (e) {
+      _status = AuthStatus.unauthenticated;
+      // You could add error handling here
+    }
+    notifyListeners();
+  }
+
+  void logout() {
+    _status = AuthStatus.unauthenticated;
+    notifyListeners();
+  }
+}
 
 void main() {
-  // TODO #3: Set up Provider pattern
-  // - Create AuthService class with AuthStatus enum
-  // - Wrap MyApp with ChangeNotifierProvider
-
-  runApp(const MyApp());
+  runApp(ChangeNotifierProvider(
+      create: (context) => AuthService(), child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -26,128 +55,98 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthViewSwitcher extends StatelessWidget {
-  AuthViewSwitcher({super.key});
-
-  // TODO #4: Replace ValueNotifier with Provider
-
-  final _isLoggedIn = ValueNotifier<bool>(false);
+  const AuthViewSwitcher({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isLoggedIn =
+        context.watch<AuthService>().status == AuthStatus.authenticated;
+
     return Scaffold(
-      body: ValueListenableBuilder<bool>(
-          valueListenable: _isLoggedIn,
-          builder: (context, isLoggedIn, child) {
-            return AnimatedSwitcher(
-                duration: Duration(milliseconds: 500),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeOut,
-                transitionBuilder: (child, animation) {
-                  return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(1, 0),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  );
-                },
-                child: isLoggedIn
-                    ? NavRailView(
-                        onLogout: () => _isLoggedIn.value = false,
-                      )
-                    : LoginView(
-                        onLogin: () => _isLoggedIn.value = true,
-                      ));
-          }),
-    );
+        body: AnimatedSwitcher(
+            duration: Duration(milliseconds: 500),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeOut,
+            transitionBuilder: (child, animation) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              );
+            },
+            child: isLoggedIn ? const NavRailView() : LoginView()));
   }
 }
 
 class LoginView extends StatelessWidget {
-  LoginView({super.key, required this.onLogin});
-
-  final Function() onLogin;
+  LoginView({
+    super.key,
+  });
 
   final _key = GlobalKey<FormState>();
-
-  final ValueNotifier<Future> _loginFuture = ValueNotifier(Future.value(null));
 
   final FocusNode _usernameFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
 
-  save() {
+  save(BuildContext context) {
     if (_key.currentState!.validate()) {
-      _loginFuture.value = Future.delayed(const Duration(seconds: 2));
-      _loginFuture.value.whenComplete(() {
-        onLogin();
-      });
+      context.read<AuthService>().login();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-        valueListenable: _loginFuture,
-        builder: (context, value, _) {
-          return FutureBuilder(
-              future: value,
-              builder: (context, snapshot) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _usernameFocus.requestFocus();
-                });
-                return Center(
-                    child: Form(
-                  key: _key,
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextFormField(
-                          focusNode: _usernameFocus,
-                          enabled: snapshot.connectionState !=
-                              ConnectionState.waiting,
-                          decoration:
-                              const InputDecoration(labelText: 'Username'),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter a username'
-                              : null,
-                          onFieldSubmitted: (_) =>
-                              _passwordFocus.requestFocus(),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          focusNode: _passwordFocus,
-                          obscureText: true,
-                          enabled: snapshot.connectionState !=
-                              ConnectionState.waiting,
-                          decoration:
-                              const InputDecoration(labelText: 'Password'),
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter a password'
-                              : null,
-                          onFieldSubmitted: (_) => save(),
-                        ),
-                        const SizedBox(height: 16),
-                        snapshot.connectionState == ConnectionState.waiting
-                            ? const CircularProgressIndicator()
-                            : ElevatedButton(
-                                onPressed: () => save(),
-                                child: const Text('Login'),
-                              ),
-                      ],
-                    ),
+    final authStatus = context.watch<AuthService>().status;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _usernameFocus.requestFocus();
+    });
+    return Center(
+        child: Form(
+      key: _key,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextFormField(
+              focusNode: _usernameFocus,
+              enabled: authStatus != AuthStatus.authenticating,
+              decoration: const InputDecoration(labelText: 'Username'),
+              validator: (value) => value == null || value.isEmpty
+                  ? 'Please enter a username'
+                  : null,
+              onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              focusNode: _passwordFocus,
+              obscureText: true,
+              enabled: authStatus != AuthStatus.authenticating,
+              decoration: const InputDecoration(labelText: 'Password'),
+              validator: (value) => value == null || value.isEmpty
+                  ? 'Please enter a password'
+                  : null,
+              onFieldSubmitted: (_) => save(context),
+            ),
+            const SizedBox(height: 16),
+            authStatus == AuthStatus.authenticating
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: () => save(context),
+                    child: const Text('Login'),
                   ),
-                ));
-              });
-        });
+          ],
+        ),
+      ),
+    ));
   }
 }
 
 class NavRailView extends StatefulWidget {
-  const NavRailView({super.key, required this.onLogout});
-
-  final Function() onLogout;
+  const NavRailView({super.key});
 
   @override
   State<NavRailView> createState() => _NavRailViewState();
@@ -157,21 +156,21 @@ class _NavRailViewState extends State<NavRailView> {
   int _selectedIndex = 0;
   NavigationRailLabelType labelType = NavigationRailLabelType.all;
 
-  var destinations = const <NavigationRailDestination>[
-    NavigationRailDestination(
+  final List<NavigationDestination> destinations = const [
+    NavigationDestination(
       icon: Icon(Icons.favorite_border),
       selectedIcon: Icon(Icons.favorite),
-      label: Text('Items'),
+      label: 'Items',
     ),
-    NavigationRailDestination(
+    NavigationDestination(
       icon: Icon(Icons.bookmark_border),
       selectedIcon: Icon(Icons.book),
-      label: Text('Example'),
+      label: 'Example',
     ),
-    NavigationRailDestination(
+    NavigationDestination(
       icon: Icon(Icons.star_border),
       selectedIcon: Icon(Icons.star),
-      label: Text('Example'),
+      label: 'Example',
     ),
   ];
 
@@ -190,34 +189,66 @@ class _NavRailViewState extends State<NavRailView> {
     // TODO #5: Implement responsive navigation
     // - Add LayoutBuilder to switch between NavigationRail and NavigationBar
     // - Handle different layouts for <600px, >600px, >800px
-    return Row(
-      children: <Widget>[
-        NavigationRail(
+
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 600) {
+        return Column(
+          children: [
+            Expanded(
+              child: IndexedStack(
+                key: GlobalObjectKey("indexedStack"),
+                index: _selectedIndex,
+                children: views,
+              ),
+            ),
+            NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() => _selectedIndex = index);
+              },
+              destinations: destinations,
+            ),
+          ],
+        );
+      }
+      return Row(
+        children: [
+          NavigationRail(
+            extended: constraints.maxWidth >= 800,
             selectedIndex: _selectedIndex,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-              });
+            onDestinationSelected: (index) {
+              setState(() => _selectedIndex = index);
             },
             trailing: Expanded(
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
+                  padding: const EdgeInsets.only(bottom: 16.0),
                   child: IconButton(
                     icon: const Icon(Icons.logout),
-                    onPressed: widget.onLogout,
+                    onPressed: () => context.read<AuthService>().logout(),
                   ),
                 ),
               ),
             ),
-            labelType: NavigationRailLabelType.all,
-            destinations: destinations),
-        // TODO #1: Replace direct view rendering with IndexedStack for state preservation
-        // TODO #6: Add a GlobalObjectKey to avoid rebuilds on widget relocation in the tree
-        Expanded(child: views[_selectedIndex])
-      ],
-    );
+            destinations: destinations
+                .map((e) => NavigationRailDestination(
+                      icon: e.icon,
+                      selectedIcon: e.selectedIcon,
+                      label: Text(e.label),
+                    ))
+                .toList(),
+          ),
+          Expanded(
+            child: IndexedStack(
+              key: GlobalObjectKey("indexedStack"),
+              index: _selectedIndex,
+              children: views,
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
 

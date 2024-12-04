@@ -13,7 +13,7 @@ class _ItemsViewState extends State<ItemsView> {
   Future<List<Item>> getItems = ItemRepository().getAll();
 
   int _selectedIndex = -1;
-  Item? selectedItem = null;
+  Item? selectedItem;
 
   @override
   Widget build(BuildContext context) {
@@ -25,19 +25,24 @@ class _ItemsViewState extends State<ItemsView> {
             if (snapshot.hasData) {
               return ListView.builder(
                   // TODO #2: Add PageStorageKey to ListView.builder for scroll position preservation
+
                   itemCount: snapshot.data!.length,
                   itemBuilder: (context, index) {
                     var item = snapshot.data![index];
-                    // TODO #7: Add Hero animations to ListTiles
-                    return ListTile(
-                      selected: index == _selectedIndex,
-                      onTap: () {
-                        setState(() {
-                          _selectedIndex = index;
-                          selectedItem = item;
-                        });
-                      },
-                      title: Text(item.description),
+                    return Hero(
+                      tag: item.id,
+                      child: Material(
+                        child: ListTile(
+                          selected: index == _selectedIndex,
+                          onTap: () {
+                            setState(() {
+                              _selectedIndex = index;
+                              selectedItem = item;
+                            });
+                          },
+                          title: Text(item.description),
+                        ),
+                      ),
                     );
                   });
             }
@@ -266,8 +271,8 @@ class AnimatedActionButtons extends StatelessWidget {
 }
 
 Future<Item?> editItemDialog(BuildContext context, Item item) {
-  return Navigator.of(context)
-      .push<Item>(MaterialPageRoute<Item>(builder: (context) {
+  return Navigator.of(context).push<Item>(
+      CustomPageRouteBuilder<Item>(child: Builder(builder: (context) {
     String? description = item.description;
 
     final key = GlobalKey<FormState>();
@@ -284,10 +289,13 @@ Future<Item?> editItemDialog(BuildContext context, Item item) {
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          AppBar(
-            automaticallyImplyLeading: false,
-            title: Text(item.description),
-            // No need to specify styles here anymore
+          Hero(
+            tag: item.id,
+            child: AppBar(
+              automaticallyImplyLeading: false,
+              title: Text(item.description),
+              // No need to specify styles here anymore
+            ),
           ),
           SizedBox(height: 16),
           Expanded(
@@ -299,8 +307,9 @@ Future<Item?> editItemDialog(BuildContext context, Item item) {
                     initialValue: item.description,
                     autofocus: true,
                     // add tooltip to description field
-                    decoration:
-                        InputDecoration(hintText: "Enter item description", labelText: "Description"),
+                    decoration: InputDecoration(
+                        hintText: "Enter item description",
+                        labelText: "Description"),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Please enter a description";
@@ -332,11 +341,31 @@ Future<Item?> editItemDialog(BuildContext context, Item item) {
         ]),
       ),
     );
-  }));
+  })));
+}
+
+class CustomPageRouteBuilder<T> extends PageRouteBuilder<T> {
+  final Widget child;
+
+  CustomPageRouteBuilder({required this.child})
+      : super(
+          transitionDuration: const Duration(milliseconds: 300),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
+          pageBuilder: (context, animation, secondaryAnimation) => child,
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            /* rotate transition spin */
+            final rotateTween = Tween<double>(begin: 0, end: 1);
+            final rotateAnimation = rotateTween.animate(animation);
+
+            return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(scale: animation, child: child));
+          },
+        );
 }
 
 
-
+// se om det finns något enhetligare sätt att göra theming på
 
 
 
