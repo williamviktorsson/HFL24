@@ -1,10 +1,19 @@
 import 'package:admin_app/christmas_theme.dart';
+import 'package:admin_app/firebase_options.dart';
 import 'package:admin_app/views/example_view.dart';
 import 'package:admin_app/views/items_view.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  var db = FirebaseFirestore.instance;
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => AuthService(),
@@ -44,8 +53,6 @@ class AuthService extends ChangeNotifier {
   }
 }
 
-
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -53,7 +60,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Items Managing App',
-         theme: ChristmasTheme.theme,
+      theme: ChristmasTheme.theme,
       home: const AuthViewSwitcher(),
     );
   }

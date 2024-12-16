@@ -44,6 +44,8 @@ dependencies:
     path: '../client_repositories'
   provider: ^6.1.2
   google_fonts: ^6.2.1
+  firebase_core: ^3.8.1
+  cloud_firestore: ^5.5.1
 
 dev_dependencies:
   flutter_test:
