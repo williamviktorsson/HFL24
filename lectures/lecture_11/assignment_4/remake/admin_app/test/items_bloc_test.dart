@@ -36,7 +36,9 @@ void main() {
           seed: () => ItemsLoaded(items: []),
           act: (bloc) => bloc.add(CreateItem(item: newItem)),
           expect: () => [
-                ItemsLoaded(items: [newItem])
+                ItemsLoaded(items: [newItem], pending: newItem), // optimistic update,
+                ItemsLoaded(items: [newItem], pending: null) // update succeded
+
               ],
           verify: (_) {
             verify(() => itemRepository.create(newItem)).called(1);

@@ -109,7 +109,7 @@ class AuthViewSwitcher extends StatelessWidget {
                 child: child,
               );
             },
-            child: isLoggedIn ? const NavRailView() : LoginView()));
+            child: isLoggedIn ? NavRailView() : LoginView()));
   }
 }
 
@@ -178,16 +178,10 @@ class LoginView extends StatelessWidget {
   }
 }
 
-class NavRailView extends StatefulWidget {
-  const NavRailView({super.key});
+class NavRailView extends StatelessWidget {
+  NavRailView({super.key});
 
-  @override
-  State<NavRailView> createState() => _NavRailViewState();
-}
-
-class _NavRailViewState extends State<NavRailView> {
-  int _selectedIndex = 0;
-  NavigationRailLabelType labelType = NavigationRailLabelType.all;
+  final ValueNotifier<int> _selectedIndex = ValueNotifier(0);
 
   final List<NavigationDestination> destinations = const [
     NavigationDestination(
@@ -207,7 +201,7 @@ class _NavRailViewState extends State<NavRailView> {
     ),
   ];
 
-  var views = [
+  final views = [
     ItemsView(),
     const ExampleView(
       index: 1,
@@ -235,16 +229,20 @@ class _NavRailViewState extends State<NavRailView> {
           return Column(
             children: [
               Expanded(
-                child: IndexedStack(
-                  key: GlobalObjectKey("indexedStack"),
-                  index: _selectedIndex,
-                  children: views,
-                ),
+                child: ValueListenableBuilder(
+                    valueListenable: _selectedIndex,
+                    builder: (context, index, _) {
+                      return IndexedStack(
+                        key: const GlobalObjectKey("indexedStack"),
+                        index: index,
+                        children: views,
+                      );
+                    }),
               ),
               NavigationBar(
-                selectedIndex: _selectedIndex,
+                selectedIndex: _selectedIndex.value,
                 onDestinationSelected: (index) {
-                  setState(() => _selectedIndex = index);
+                  _selectedIndex.value = index;
                 },
                 destinations: destinations,
               ),
@@ -255,9 +253,9 @@ class _NavRailViewState extends State<NavRailView> {
           children: [
             NavigationRail(
               extended: constraints.maxWidth >= 800,
-              selectedIndex: _selectedIndex,
+              selectedIndex: _selectedIndex.value,
               onDestinationSelected: (index) {
-                setState(() => _selectedIndex = index);
+                _selectedIndex.value = index;
               },
               trailing: Expanded(
                 child: Align(
@@ -284,7 +282,7 @@ class _NavRailViewState extends State<NavRailView> {
             Expanded(
               child: IndexedStack(
                 key: GlobalObjectKey("indexedStack"),
-                index: _selectedIndex,
+                index: _selectedIndex.value,
                 children: views,
               ),
             ),
