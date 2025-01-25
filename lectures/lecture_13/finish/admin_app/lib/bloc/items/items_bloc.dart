@@ -23,8 +23,8 @@ class ItemsBloc extends Bloc<ItemsEvent, ItemsState> {
             await onDeleteItem(emit, item);
 
           case SubscribeToUserItems(:final userId):
-            emit.onEach(repository.userItemsStream(userId), onData: (items) {
-              emit(ItemsLoaded(items: items));
+            return emit.onEach(repository.userItemsStream(userId), onData: (items) {
+              return emit(ItemsLoaded(items: items));
             });
         }
       } on Exception catch (e) {

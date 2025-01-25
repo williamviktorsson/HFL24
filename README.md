@@ -8,3 +8,5 @@ I [lectures](/lectures/) publiceras kod som visades under föreläsningar.
 I [tutoring](/tutoring/) publicerar jag kod som visades under handledningstillfällen.
 
 <!-- git clean -d -x -f -->
+
+<!-- git clean -X -f -->

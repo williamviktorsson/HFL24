@@ -25,17 +25,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             await onLogout(emit);
           case AuthUserSubscriptionRequested():
             // todo: perhaps return
-            emit.onEach(authRepository.userStream, onData: (authUser) async {
+            return emit.onEach(authRepository.userStream, onData: (authUser) async {
               if (authUser == null) {
-                emit(Unauthenticated());
+                return emit(Unauthenticated());
               } else {
                 // user is authenticated in firebase auth, does user exist in db?
                 User? user = await userRepository.getByAuthId(authUser.uid);
                 if (user == null) {
-                  emit(AuthenticatedNoUser(
+                  return emit(AuthenticatedNoUser(
                       authId: authUser.uid, email: authUser.email!));
                 } else {
-                  emit(Authenticated(user: user));
+                  return emit(Authenticated(user: user));
                 }
               }
             });
