@@ -1,5 +1,6 @@
 import 'package:admin_app/bloc/auth/auth_bloc.dart';
 import 'package:admin_app/bloc/items/items_bloc.dart';
+import 'package:admin_app/bloc/notifications/notification_bloc.dart';
 import 'package:admin_app/cubit/selected_item_cubit.dart';
 import 'package:admin_app/main.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,9 @@ class ItemsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    NotificationState notificationState =
+        context.watch<NotificationBloc>().state;
+
     return Scaffold(
       body: Center(
         child: BlocBuilder<ItemsBloc, ItemsState>(
@@ -28,6 +32,8 @@ class ItemsView extends StatelessWidget {
                   itemBuilder: (context, index) {
                     var item = items[index];
                     bool is_pending = item.id == pending?.id;
+                    bool is_scheduled =
+                        notificationState.isIdScheduled(item.id);
                     return Hero(
                       tag: item.id,
                       child: Material(
@@ -43,16 +49,22 @@ class ItemsView extends StatelessWidget {
                                 ? const CircularProgressIndicator()
                                 : IconButton(
                                     onPressed: () async {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                              content: Text(
-                                                  "Notification should set at ${DateFormat.Hms().format(item.expiration)}")));
-                                      await scheduleNotification(
-                                          title: "Item created!",
-                                          content: item.description,
-                                          time: item.expiration);
+                                      if (is_scheduled) {
+                                        context.read<NotificationBloc>().add(
+                                            CancelNotification(id: item.id));
+                                      } else {
+                                        context.read<NotificationBloc>().add(
+                                            ScheduleNotification(
+                                                id: item.id,
+                                                title: "Item expiration",
+                                                content: item.description,
+                                                deliveryTime: item.expiration));
+                                      }
                                     },
-                                    icon: const Icon(Icons.notification_add)),
+                                    icon: !is_scheduled
+                                        ? const Icon(Icons.notification_add)
+                                        : const Icon(
+                                            Icons.notification_important, color: Colors.red,)),
                             title: Text(item.description),
                             subtitle: Text(
                                 "${DateFormat.MEd().format(item.expiration)} ${DateFormat.Hms().format(item.expiration)}"),

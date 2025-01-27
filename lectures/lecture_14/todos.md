@@ -1,10 +1,10 @@
 # Denna vecka
 
-Notiser samt bildtagning + uppladdning. 
+Notiser
 
 # Steg
 
-- [ X ] Uppdatera modeller så att t.ex. parkering har en sluttid och att en bil har en string som representerar url:en för var bilder sparas
+- [ X ] Uppdatera modeller så att t.ex. parkering har en sluttid
 - [ X ] Uppdatera GUI så att du kan sätta sluttid (något som ska styra dina notiser)
 - [ X ] TIPS!! keyboardType: TextInputType.number,  inputFormatters: [FilteringTextInputFormatter.digitsOnly] på textinput för att föra in nummer           
 - [ X ] flutter pub add intl (för att formatera tid)
