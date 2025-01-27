@@ -46,12 +46,15 @@ class NotificationsRepository {
   static NotificationsRepository? _instance;
 
   NotificationsRepository._(
-      {required this.flutterLocalNotificationsPlugin}); // private constructor
+      {required FlutterLocalNotificationsPlugin
+          flutterLocalNotificationsPlugin})
+      : _flutterLocalNotificationsPlugin =
+            flutterLocalNotificationsPlugin; // private constructor
 
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
 
   Future<void> cancelScheduledNotificaion(int id) async {
-    await flutterLocalNotificationsPlugin.cancel(id);
+    await _flutterLocalNotificationsPlugin.cancel(id);
   }
 
   Future<void> scheduleNotification(
@@ -59,7 +62,6 @@ class NotificationsRepository {
       required String content,
       required DateTime deliveryTime,
       required int id}) async {
-
     await requestPermissions();
 
     String channelId = const Uuid()
@@ -81,7 +83,7 @@ class NotificationsRepository {
 
     // from docs, not sure about specifics
 
-    return await flutterLocalNotificationsPlugin.zonedSchedule(
+    return await _flutterLocalNotificationsPlugin.zonedSchedule(
         id,
         title,
         content,
@@ -97,7 +99,7 @@ class NotificationsRepository {
 
   Future<void> requestPermissions() async {
     if (Platform.isIOS || Platform.isMacOS) {
-      await flutterLocalNotificationsPlugin
+      await _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
               IOSFlutterLocalNotificationsPlugin>()
           ?.requestPermissions(
@@ -105,7 +107,7 @@ class NotificationsRepository {
             badge: true,
             sound: true,
           );
-      await flutterLocalNotificationsPlugin
+      await _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
               MacOSFlutterLocalNotificationsPlugin>()
           ?.requestPermissions(
@@ -115,8 +117,9 @@ class NotificationsRepository {
           );
     } else if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+          _flutterLocalNotificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin>();
 
       await androidImplementation?.requestNotificationsPermission();
     }
