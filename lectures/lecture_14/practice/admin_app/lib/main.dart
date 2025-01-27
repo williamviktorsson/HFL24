@@ -42,8 +42,6 @@ Future<void> scheduleNotification(
     {required String title,
     required String content,
     required DateTime time}) async {
-
-      
   await requestPermissions();
 
   String channelId = const Uuid()
@@ -87,12 +85,6 @@ Future<void> initializeNotifications() async {
   var initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
-  final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-      flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-
-  await androidImplementation?.requestNotificationsPermission();
 }
 
 Future<void> requestPermissions() async {

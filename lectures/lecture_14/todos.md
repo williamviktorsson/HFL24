@@ -19,31 +19,7 @@ Notiser samt bildtagning + uppladdning.
 - [  ] Upgrade android NDK version:         ndkVersion = "27.0.12077973" i android/app/build.gradle
 - [  ] flutter pub add timezone
 - [  ] flutter pub add flutter_timezone
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
-- [  ] XXX
+
 
 add to app/src/main/AndroidManifest.xml inside application tag:
 
@@ -83,7 +59,7 @@ dependencies {
 }
  -->
 
-update ndkVersion in android/app/build.gradle (google indie company?)
+update ndkVersion in android/app/build.gradle and compileSdk
 
 <!-- 
 
@@ -146,16 +122,39 @@ dependencies {
   -->
 
 
- use this code for notifications
+ use this code for notifications initialization
 
 <!-- 
 
 late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
+
+
+Future<void> initializeNotifications() async {
+  flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  var initializationSettingsAndroid = const AndroidInitializationSettings(
+      '@mipmap/ic_launcher'); // TODO: Change this to an icon of your choice if you want to fix it.
+  var initializationSettingsIOS = const DarwinInitializationSettings();
+  var initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+}
+
+ -->
+
+use this to schedule notifications
+
+
+<!-- 
+
 int notifications = 0;
 
-Future<void> showNotification(
-    {required String title, required String content}) async {
+Future<void> scheduleNotification(
+    {required String title,
+    required String content,
+    required DateTime time}) async {
+  await requestPermissions();
+
   String channelId = const Uuid()
       .v4(); // id should be unique per message, but contents of the same notification can be updated if you write to the same id
   const String channelName =
@@ -172,22 +171,21 @@ Future<void> showNotification(
   var platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: iOSPlatformChannelSpecifics);
-  return await flutterLocalNotificationsPlugin.show(
-    notifications++,
-    title,
-    content,
-    platformChannelSpecifics,
-  );
-}
 
-Future<void> initializeNotifications() async {
-  flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  var initializationSettingsAndroid = const AndroidInitializationSettings(
-      '@mipmap/ic_launcher'); // TODO: Change this to an icon of your choice if you want to fix it.
-  var initializationSettingsIOS = const DarwinInitializationSettings();
-  var initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  // from docs, not sure about specifics
+  //
+  return await flutterLocalNotificationsPlugin.zonedSchedule(
+      notifications++,
+      title,
+      content,
+      tz.TZDateTime.from(
+          time,
+          tz
+              .local), // TZDateTime required to take daylight savings into considerations.
+      platformChannelSpecifics,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime);
 }
 
  -->
@@ -195,6 +193,10 @@ Future<void> initializeNotifications() async {
 configure timezones
 
  <!-- 
+
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+
  
  Future<void> _configureLocalTimeZone() async {
   if (kIsWeb || Platform.isLinux) {
@@ -208,16 +210,45 @@ configure timezones
   tz.setLocalLocation(tz.getLocation(timeZoneName));
 }
  
+  /* STI NOTIFICATIONS */
+  tz.initializeTimeZones();
+  await _configureLocalTimeZone();
+
+
   -->
 
+request permissions
 
+<!-- 
 
+Future<void> requestPermissions() async {
+  if (Platform.isIOS || Platform.isMacOS) {
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+  } else if (Platform.isAndroid) {
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
+    await androidImplementation?.requestNotificationsPermission();
+  }
+}
 
-
-
-
-
+ -->
 
 
 
