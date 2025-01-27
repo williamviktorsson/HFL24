@@ -1,6 +1,7 @@
 import 'package:admin_app/bloc/auth/auth_bloc.dart';
 import 'package:admin_app/bloc/items/items_bloc.dart';
 import 'package:admin_app/cubit/selected_item_cubit.dart';
+import 'package:admin_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,11 +42,11 @@ class ItemsView extends StatelessWidget {
                             trailing: is_pending
                                 ? const CircularProgressIndicator()
                                 : IconButton(
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                              content: Text(
-                                                  "Notification should set at ${DateFormat.Hms().format(item.expiration)}")));
+                                    onPressed: () async {
+                                      await scheduleNotification(
+                                          title: "Item ready",
+                                          content: item.description,
+                                          time: item.expiration);
                                     },
                                     icon: const Icon(Icons.notification_add)),
                             title: Text(item.description),

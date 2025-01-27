@@ -8,17 +8,23 @@ Notiser
 - [ X ] Uppdatera GUI så att du kan sätta sluttid (något som ska styra dina notiser)
 - [ X ] TIPS!! keyboardType: TextInputType.number,  inputFormatters: [FilteringTextInputFormatter.digitsOnly] på textinput för att föra in nummer           
 - [ X ] flutter pub add intl (för att formatera tid)
-- [  ] flutter pub add flutter_local_notifications
-- [  ] Android - android/app/src/main/AndroidManifest.xml, add <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/> 
+- [ X ] flutter pub add flutter_local_notifications
+
+<!-- under application -->
+
+- [ X ] Android - android/app/src/main/AndroidManifest.xml, add <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/> 
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" /> (tillåt notification efter reboot), placeras inom <manifest/> taggarna
-- [  ] Notis ikon: <meta-data
+- [ X ] Notis ikon: <meta-data
   android:name="com.google.firebase.messaging.default_notification_icon"
   android:resource="@mipmap/ic_launcher"/>
         För egna ikoner, generera nya drawables, finns https://pub.dev/packages/android_notification_icons ,i givna exemplet, byt resource till ="@drawable/ic_notification"
-- [  ] Initialisera plugin
-- [  ] Upgrade android NDK version:         ndkVersion = "27.0.12077973" i android/app/build.gradle
-- [  ] flutter pub add timezone
-- [  ] flutter pub add flutter_timezone
+
+
+
+- [ X ] Upgrade android NDK version:         ndkVersion = "27.0.12077973" i android/app/build.gradle
+- [ X ] flutter pub add timezone
+- [ X ] flutter pub add flutter_timezone
+
 
 
 add to app/src/main/AndroidManifest.xml inside application tag:
@@ -52,7 +58,10 @@ android {
     sourceCompatibility JavaVersion.VERSION_1_8
     targetCompatibility JavaVersion.VERSION_1_8
   }
+
 }
+
+// outside android tag 
 
 dependencies {
   coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:admin_app/bloc/auth/auth_bloc.dart';
@@ -12,8 +13,110 @@ import 'package:firebase_repositories/firebase_repositories.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:uuid/uuid.dart';
+
+late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+
+Future<void> _configureLocalTimeZone() async {
+  if (kIsWeb || Platform.isLinux) {
+    return;
+  }
+  tz.initializeTimeZones();
+  if (Platform.isWindows) {
+    return;
+  }
+  final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+  tz.setLocalLocation(tz.getLocation(timeZoneName));
+}
+
+Future<void> initializeNotifications() async {
+  flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  var initializationSettingsAndroid = const AndroidInitializationSettings(
+      '@mipmap/ic_launcher'); // TODO: Change this to an icon of your choice if you want to fix it.
+  var initializationSettingsIOS = const DarwinInitializationSettings();
+
+  // add settings per platform
+  var initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+}
+
+Future<void> requestPermissions() async {
+  if (Platform.isIOS || Platform.isMacOS) {
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+  } else if (Platform.isAndroid) {
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidImplementation?.requestNotificationsPermission();
+  }
+}
+
+int notifications = 0;
+
+Future<void> scheduleNotification(
+    {required String title,
+    required String content,
+    required DateTime time}) async {
+  await requestPermissions();
+
+  String channelId = const Uuid()
+      .v4(); // id should be unique per message, but contents of the same notification can be updated if you write to the same id
+
+  const String channelName =
+      "notifications_channel"; // this can be anything, different channels can be configured to have different colors, sound, vibration, we wont do that here
+  String channelDescription =
+      "Standard notifications"; // description is optional but shows up in user system settings
+  var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      channelId, channelName,
+      channelDescription: channelDescription,
+      importance: Importance.max,
+      priority: Priority.high,
+      ticker: 'ticker');
+
+  var iOSPlatformChannelSpecifics = const DarwinNotificationDetails();
+  var platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics);
+
+  // from docs, not sure about specifics
+  //
+  return await flutterLocalNotificationsPlugin.zonedSchedule(
+      notifications++, // id per notification is integer, can be reused to cancel notification
+      title,
+      content,
+      tz.TZDateTime.from(
+          time,
+          tz
+              .local), // TZDateTime required to take daylight savings into considerations.
+      platformChannelSpecifics,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime);
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +129,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await _configureLocalTimeZone();
+
+  await initializeNotifications();
 
   runApp(
     MultiRepositoryProvider(

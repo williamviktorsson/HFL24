@@ -1,3 +1,11 @@
+plugins {
+    /* STI NOTIFICATIONS */
+      // Add the dependency for the Google services Gradle plugin
+  id 'com.google.gms.google-services' version '4.4.2' apply false
+  /* firebase only, perhaps not notifications */
+}
+
+
 allprojects {
     repositories {
         google()
