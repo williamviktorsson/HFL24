@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
-
 import 'package:admin_app/bloc/auth/auth_bloc.dart';
 import 'package:admin_app/bloc/items/items_bloc.dart';
 import 'package:admin_app/christmas_theme.dart';
@@ -21,7 +21,82 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:uuid/uuid.dart';
 
+/// A notification action which triggers a url launch event
+const String urlLaunchActionId = 'id_1';
+
+/// A notification action which triggers a App navigation event
+const String navigationActionId = 'id_3';
+
+/// Defines a iOS/MacOS notification category for text input actions.
+const String darwinNotificationCategoryText = 'textCategory';
+
+/// Defines a iOS/MacOS notification category for plain actions.
+const String darwinNotificationCategoryPlain = 'plainCategory';
+
 late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+
+/// Streams are created so that app can respond to notification-related events
+/// since the plugin is initialized in the `main` function
+final StreamController<NotificationResponse> selectNotificationStream =
+    StreamController<NotificationResponse>.broadcast();
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  // ignore: avoid_print
+  print('notification(${notificationResponse.id}) action tapped: '
+      '${notificationResponse.actionId} with'
+      ' payload: ${notificationResponse.payload}');
+  if (notificationResponse.input?.isNotEmpty ?? false) {
+    // ignore: avoid_print
+    print(
+        'notification action tapped with input: ${notificationResponse.input}');
+  }
+}
+
+final List<DarwinNotificationCategory> darwinNotificationCategories =
+    <DarwinNotificationCategory>[
+  DarwinNotificationCategory(
+    darwinNotificationCategoryText,
+    actions: <DarwinNotificationAction>[
+      DarwinNotificationAction.text(
+        'text_1',
+        'Action 1',
+        buttonTitle: 'Send',
+        placeholder: 'Placeholder',
+      ),
+    ],
+  ),
+  DarwinNotificationCategory(
+    darwinNotificationCategoryPlain,
+    actions: <DarwinNotificationAction>[
+      DarwinNotificationAction.plain('id_1', 'Action 1'),
+      DarwinNotificationAction.plain(
+        'id_2',
+        'Action 2 (destructive)',
+        options: <DarwinNotificationActionOption>{
+          DarwinNotificationActionOption.destructive,
+        },
+      ),
+      DarwinNotificationAction.plain(
+        navigationActionId,
+        'Action 3 (foreground)',
+        options: <DarwinNotificationActionOption>{
+          DarwinNotificationActionOption.foreground,
+        },
+      ),
+      DarwinNotificationAction.plain(
+        'id_4',
+        'Action 4 (auth required)',
+        options: <DarwinNotificationActionOption>{
+          DarwinNotificationActionOption.authenticationRequired,
+        },
+      ),
+    ],
+    options: <DarwinNotificationCategoryOption>{
+      DarwinNotificationCategoryOption.hiddenPreviewShowTitle,
+    },
+  )
+];
 
 Future<void> _configureLocalTimeZone() async {
   if (kIsWeb || Platform.isLinux) {
@@ -40,12 +115,25 @@ Future<void> initializeNotifications() async {
 
   var initializationSettingsAndroid = const AndroidInitializationSettings(
       '@mipmap/ic_launcher'); // TODO: Change this to an icon of your choice if you want to fix it.
-  var initializationSettingsIOS = const DarwinInitializationSettings();
+  /// Note: permissions aren't requested here just to demonstrate that can be
+  /// done later
+  final DarwinInitializationSettings initializationSettingsDarwin =
+      DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+    notificationCategories: darwinNotificationCategories,
+  );
 
   // add settings per platform
   var initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin);
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: selectNotificationStream.add,
+    onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+  );
 }
 
 Future<void> requestPermissions() async {
@@ -90,17 +178,49 @@ Future<void> scheduleNotification(
       "notifications_channel"; // this can be anything, different channels can be configured to have different colors, sound, vibration, we wont do that here
   String channelDescription =
       "Standard notifications"; // description is optional but shows up in user system settings
-  var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      channelId, channelName,
-      channelDescription: channelDescription,
-      importance: Importance.max,
-      priority: Priority.high,
-      ticker: 'ticker');
 
-  var iOSPlatformChannelSpecifics = const DarwinNotificationDetails();
-  var platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics);
+  AndroidNotificationDetails androidNotificationDetails =
+      AndroidNotificationDetails(
+    channelId,
+    channelName,
+    channelDescription: channelDescription,
+    importance: Importance.max,
+    priority: Priority.high,
+    ticker: 'ticker',
+    actions: <AndroidNotificationAction>[
+      const AndroidNotificationAction(
+        urlLaunchActionId,
+        'Action 1',
+        icon: DrawableResourceAndroidBitmap('food'),
+        contextual: true,
+      ),
+      const AndroidNotificationAction(
+        'id_2',
+        'Action 2',
+        titleColor: Color.fromARGB(255, 255, 0, 0),
+        icon: DrawableResourceAndroidBitmap('secondary_icon'),
+      ),
+      const AndroidNotificationAction(
+        navigationActionId,
+        'Action 3',
+        icon: DrawableResourceAndroidBitmap('secondary_icon'),
+        showsUserInterface: true,
+        // By default, Android plugin will dismiss the notification when the
+        // user tapped on a action (this mimics the behavior on iOS).
+        cancelNotification: false,
+      ),
+    ],
+  );
+
+  const DarwinNotificationDetails iosNotificationDetails =
+      DarwinNotificationDetails(
+    categoryIdentifier: darwinNotificationCategoryPlain,
+  );
+
+  final NotificationDetails notificationDetails = NotificationDetails(
+    android: androidNotificationDetails,
+    iOS: iosNotificationDetails,
+  );
 
   // from docs, not sure about specifics
   //
@@ -112,7 +232,7 @@ Future<void> scheduleNotification(
           time,
           tz
               .local), // TZDateTime required to take daylight savings into considerations.
-      platformChannelSpecifics,
+      notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime);
@@ -168,7 +288,7 @@ class MyApp extends StatelessWidget {
           child: Builder(builder: (context) {
             return MediaQuery(
                 data: MediaQuery.of(context)
-                    .copyWith(textScaler: TextScaler.linear(2)),
+                    .copyWith(textScaler: const TextScaler.linear(2)),
                 child: const AuthViewSwitcher());
           })),
     );
@@ -468,7 +588,7 @@ class NavRailView extends StatelessWidget {
   ];
 
   final views = [
-    ItemsView(),
+    const ItemsView(),
     const ExampleView(
       index: 1,
     ),
