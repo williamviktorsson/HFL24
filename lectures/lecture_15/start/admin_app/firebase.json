@@ -1,0 +1,36 @@
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "parking-demo-28d80",
+          "configurations": {
+            "android": "1:609183639614:android:b9413f78783a6cd761896f",
+            "ios": "1:609183639614:ios:137bec12d17abeeb61896f",
+            "macos": "1:609183639614:ios:137bec12d17abeeb61896f",
+            "web": "1:609183639614:web:cae4d183483d9c5561896f",
+            "windows": "1:609183639614:web:907060ee18f14b1661896f"
+          }
+        }
+      },
+      "android": {
+        "default": {
+          "projectId": "parking-demo-28d80",
+          "appId": "1:609183639614:android:b9413f78783a6cd761896f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      }
+    }
+  },
+  "hosting": {
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "europe-west1"
+    }
+  }
+}
