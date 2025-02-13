@@ -5,7 +5,7 @@ class Item {
   String id;
   String creatorId;
   String? url;
-  DateTime expiration;
+  int expiration;
 
   @override
   bool operator ==(Object other) {
@@ -33,7 +33,7 @@ class Item {
         description: json['description'],
         creatorId: json['creatorId'],
         id: json['id'],
-        expiration: DateTime.parse(json['expiration']),
+        expiration: json['expiration'],
         url: json['url']);
   }
 
@@ -43,7 +43,7 @@ class Item {
       "creatorId": creatorId,
       "id": id,
       if (url != null) "url": url,
-      "expiration": expiration.toIso8601String()
+      "expiration": expiration
     };
   }
 }

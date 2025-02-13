@@ -5,7 +5,6 @@ import 'package:admin_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 
 class ItemsView extends StatelessWidget {
@@ -46,12 +45,14 @@ class ItemsView extends StatelessWidget {
                                       await scheduleNotification(
                                           title: "Item ready",
                                           content: item.description,
-                                          time: item.expiration);
+                                          timeout: Duration(
+                                              seconds: item.expiration),
+                                          itemId: item.id);
                                     },
                                     icon: const Icon(Icons.notification_add)),
                             title: Text(item.description),
-                            subtitle: Text(
-                                "${DateFormat.MEd().format(item.expiration)} ${DateFormat.Hms().format(item.expiration)}"),
+                            subtitle:
+                                Text("Expires in ${item.expiration} seconds"),
                           );
                         }),
                       ),
@@ -75,6 +76,7 @@ class ItemsView extends StatelessWidget {
         },
         onItemDeleted: (item) async {
           context.read<ItemsBloc>().add(DeleteItem(item: item));
+          context.read<SelectedItemCubit>().deselect();
         },
       ),
     );
@@ -197,12 +199,12 @@ class AnimatedActionButtons extends StatelessWidget {
               key.currentState!.save();
               final Authenticated(:user) = context.read<AuthBloc>().state
                   as Authenticated; // assume authenticated user
-              Navigator.of(context).pop(Item(
-                description: description!,
-                creatorId: user.id,
-                expiration: DateTime.now()
-                    .add(Duration(seconds: expirationTimeInSeconds!)),
-              ));
+              Navigator.of(context).pop(
+                Item(
+                    description: description!,
+                    creatorId: user.id,
+                    expiration: expirationTimeInSeconds!),
+              );
             }
           }
 

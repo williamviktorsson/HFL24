@@ -23,7 +23,8 @@ void main() {
     });
 
     group("create test", () {
-      Item newItem = Item(description: "new item", creatorId: "1", expiration: DateTime.now().add(const Duration(days: 1)), url: '/');
+      Item newItem = Item(
+          description: "new item", creatorId: "1", expiration: 15, url: '/');
 
       blocTest<ItemsBloc, ItemsState>("create item test",
           setUp: () {
@@ -55,7 +56,9 @@ void main() {
           expect: () => [
                 ItemsLoaded(
                     items: [newItem], pending: newItem), // optimistic update,
-                ItemsError(message: Exception("item create fail").toString()) // update failed
+                ItemsError(
+                    message: Exception("item create fail")
+                        .toString()) // update failed
               ],
           verify: (_) {
             verify(() => itemRepository.create(newItem)).called(1);

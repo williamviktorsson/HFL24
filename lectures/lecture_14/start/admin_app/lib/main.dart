@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'package:admin_app/bloc/auth/auth_bloc.dart';
@@ -22,13 +23,9 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:uuid/uuid.dart';
 
 /// A notification action which triggers a url launch event
-const String urlLaunchActionId = 'id_1';
+const String actionIdDelete = 'id_1';
 
-/// A notification action which triggers a App navigation event
-const String navigationActionId = 'id_3';
-
-/// Defines a iOS/MacOS notification category for text input actions.
-const String darwinNotificationCategoryText = 'textCategory';
+const String actionIdIncreaseTime = 'id_2';
 
 /// Defines a iOS/MacOS notification category for plain actions.
 const String darwinNotificationCategoryPlain = 'plainCategory';
@@ -41,54 +38,61 @@ final StreamController<NotificationResponse> selectNotificationStream =
     StreamController<NotificationResponse>.broadcast();
 
 @pragma('vm:entry-point')
-void notificationTapBackground(NotificationResponse notificationResponse) {
-  // ignore: avoid_print
-  print('notification(${notificationResponse.id}) action tapped: '
-      '${notificationResponse.actionId} with'
-      ' payload: ${notificationResponse.payload}');
-  if (notificationResponse.input?.isNotEmpty ?? false) {
-    // ignore: avoid_print
-    print(
-        'notification action tapped with input: ${notificationResponse.input}');
+void notificationTapBackground(
+    NotificationResponse notificationResponse) async {
+  print(notificationResponse.payload);
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await _configureLocalTimeZone();
+
+  await initializeNotifications();
+
+  if (notificationResponse.payload != null) {
+    // we need a payload to perform something constructive, payload sent when scheduling notificaiton
+
+    final map = jsonDecode(notificationResponse.payload!);
+
+    String title = map['title'];
+    String content = map['content'];
+    String itemId = map['itemId'];
+    int count = map['count'];
+
+
+
+    switch (notificationResponse.actionId) {
+      case actionIdDelete:
+        ItemRepository().delete(itemId);
+        break;
+      case actionIdIncreaseTime:
+        count++;
+        await scheduleNotification(
+            title: title,
+            content: content,
+            timeout: const Duration(seconds: 10),
+            itemId: itemId,
+            count: count);
+        break;
+    }
   }
 }
 
 final List<DarwinNotificationCategory> darwinNotificationCategories =
     <DarwinNotificationCategory>[
   DarwinNotificationCategory(
-    darwinNotificationCategoryText,
-    actions: <DarwinNotificationAction>[
-      DarwinNotificationAction.text(
-        'text_1',
-        'Action 1',
-        buttonTitle: 'Send',
-        placeholder: 'Placeholder',
-      ),
-    ],
-  ),
-  DarwinNotificationCategory(
     darwinNotificationCategoryPlain,
     actions: <DarwinNotificationAction>[
-      DarwinNotificationAction.plain('id_1', 'Action 1'),
       DarwinNotificationAction.plain(
-        'id_2',
-        'Action 2 (destructive)',
+          actionIdIncreaseTime, 'Schedule + 10 seconds'),
+      DarwinNotificationAction.plain(
+        actionIdDelete,
+        'Delete item',
         options: <DarwinNotificationActionOption>{
           DarwinNotificationActionOption.destructive,
-        },
-      ),
-      DarwinNotificationAction.plain(
-        navigationActionId,
-        'Action 3 (foreground)',
-        options: <DarwinNotificationActionOption>{
-          DarwinNotificationActionOption.foreground,
-        },
-      ),
-      DarwinNotificationAction.plain(
-        'id_4',
-        'Action 4 (auth required)',
-        options: <DarwinNotificationActionOption>{
-          DarwinNotificationActionOption.authenticationRequired,
         },
       ),
     ],
@@ -168,8 +172,10 @@ int notifications = 0;
 Future<void> scheduleNotification(
     {required String title,
     required String content,
-    required DateTime time}) async {
-  await requestPermissions();
+    required Duration timeout,
+    required String itemId,
+    int count = 0}) async {
+  //await requestPermissions();
 
   String channelId = const Uuid()
       .v4(); // id should be unique per message, but contents of the same notification can be updated if you write to the same id
@@ -189,25 +195,15 @@ Future<void> scheduleNotification(
     ticker: 'ticker',
     actions: <AndroidNotificationAction>[
       const AndroidNotificationAction(
-        urlLaunchActionId,
-        'Action 1',
+        actionIdDelete,
+        'Schedule +10 seconds',
         icon: DrawableResourceAndroidBitmap('food'),
-        contextual: true,
       ),
       const AndroidNotificationAction(
-        'id_2',
-        'Action 2',
+        actionIdDelete,
+        'Delete item',
         titleColor: Color.fromARGB(255, 255, 0, 0),
         icon: DrawableResourceAndroidBitmap('secondary_icon'),
-      ),
-      const AndroidNotificationAction(
-        navigationActionId,
-        'Action 3',
-        icon: DrawableResourceAndroidBitmap('secondary_icon'),
-        showsUserInterface: true,
-        // By default, Android plugin will dismiss the notification when the
-        // user tapped on a action (this mimics the behavior on iOS).
-        cancelNotification: false,
       ),
     ],
   );
@@ -224,18 +220,28 @@ Future<void> scheduleNotification(
 
   // from docs, not sure about specifics
   //
+
+  final id = notifications++;
+
+  final fixedTime = tz.TZDateTime.now(tz.local).add(timeout);
+
+  print(fixedTime);
+
   return await flutterLocalNotificationsPlugin.zonedSchedule(
-      notifications++, // id per notification is integer, can be reused to cancel notification
-      title,
+      id, // id per notification is integer, can be reused to cancel notification
+      title + (count > 0 ? " ($count)" : ""),
       content,
-      tz.TZDateTime.from(
-          time,
-          tz
-              .local), // TZDateTime required to take daylight savings into considerations.
+      fixedTime, // TZDateTime required to take daylight savings into considerations.
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime);
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: jsonEncode({
+        "title": title,
+        "content": content,
+        "itemId": itemId,
+        "count": count
+      }));
 }
 
 void main() async {
