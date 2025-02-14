@@ -175,7 +175,7 @@ Future<void> scheduleNotification(
     required Duration timeout,
     required String itemId,
     int count = 0}) async {
-  //await requestPermissions();
+  await requestPermissions();
 
   String channelId = const Uuid()
       .v4(); // id should be unique per message, but contents of the same notification can be updated if you write to the same id
